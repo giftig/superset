@@ -24,15 +24,18 @@ from typing import Any, TYPE_CHECKING
 
 import simplejson as json
 from flask import current_app
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import Session
 
+from superset import is_feature_enabled
 from superset.constants import QUERY_CANCEL_KEY, QUERY_EARLY_CANCEL_KEY, USER_AGENT
 from superset.databases.utils import make_url_safe
 from superset.db_engine_specs.base import BaseEngineSpec
 from superset.db_engine_specs.exceptions import SupersetDBAPIConnectionError
 from superset.db_engine_specs.presto import PrestoBaseEngineSpec
 from superset.models.sql_lab import Query
+from superset.superset_typing import ResultSetColumnType
 from superset.utils import core as utils
 
 if TYPE_CHECKING:
@@ -325,3 +328,43 @@ class TrinoEngineSpec(PrestoBaseEngineSpec):
         return {
             requests_exceptions.ConnectionError: SupersetDBAPIConnectionError,
         }
+
+    @classmethod
+    def get_columns(
+        cls, inspector: Inspector, table_name: str, schema: str | None
+    ) -> list[ResultSetColumnType]:
+        base_cols = super().get_columns(inspector, table_name, schema)
+        logger.error("HODOR HODOR get_columns: %s", [type(c.get("type")) for c in base_cols])
+        if not is_feature_enabled("TRINO_EXPAND_ROWS"):
+            return base_cols
+
+        parser = TrinoTypeParser()
+
+        # TODO: double check what types my types are in existing cols, so
+        # that we're definitely providing the correct types out. May need to
+        # `sqla`-ify them. This might be why PRESTO does an extra query, we
+        # might not have all the info
+#        cols = [
+#            parser.expand_fields(col["type"])
+#        ]
+
+        # FIXME: Use the type parser to inspect `base_cols` and expand ROWs
+        base_cols.append(
+            {
+                "name": "detail.email_address",
+                "column_name": "detail.email_address",
+                "query_as": '"detail"."email_address" AS "detail.email_address"',
+                "type": "INT",
+                "is_dttm": False,
+            }
+        )
+
+        return base_cols
+
+    @classmethod
+    def expand_data(  # pylint: disable=too-many-locals
+        cls, columns: list[ResultSetColumnType], data: list[dict[Any, Any]]
+    ) -> tuple[
+        list[ResultSetColumnType], list[dict[Any, Any]], list[ResultSetColumnType]
+    ]:
+        return columns, data, []
