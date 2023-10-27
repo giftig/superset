@@ -432,6 +432,11 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # expanded into extra columns and/or arrays. This is experimental,
     # and doesn't work with all nested types.
     "PRESTO_EXPAND_DATA": False,
+    # When this feature is enabled, nested ROW types in Trino will be fully
+    # described in SQL Lab when retrieving schemas and performing previews.
+    # Unlike PRESTO_EXPAND_DATA this will not attempt to expand ARRAY or MAP
+    # types as these can't be queried with a dotted.path.syntax like ROWs
+    "TRINO_EXPAND_ROWS": False,
     # Exposes API endpoint to compute thumbnails
     "THUMBNAILS": False,
     "DASHBOARD_CACHE": False,  # deprecated

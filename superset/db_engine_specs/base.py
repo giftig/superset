@@ -51,7 +51,7 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import quoted_name, text
+from sqlalchemy.sql import literal_column, quoted_name, text
 from sqlalchemy.sql.expression import ColumnClause, Select, TextAsFrom, TextClause
 from sqlalchemy.types import TypeEngine
 from sqlparse.tokens import CTE
@@ -1369,7 +1369,12 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
 
     @classmethod
     def _get_fields(cls, cols: list[ResultSetColumnType]) -> list[Any]:
-        return [column(c["column_name"]) for c in cols]
+        return [
+            literal_column(query_as)
+            if (query_as := c.get("query_as"))
+            else column(c["column_name"])
+            for c in cols
+        ]
 
     @classmethod
     def select_star(  # pylint: disable=too-many-arguments,too-many-locals
