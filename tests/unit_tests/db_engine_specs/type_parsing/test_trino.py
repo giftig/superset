@@ -88,3 +88,18 @@ def test_trino_type_parser_malformed(typedef: str):
 
     with pytest.raises(ValueError):
         parser.parse_type(typedef)
+
+
+@pytest.mark.parametrize(
+    "type_,expected",
+    [
+        # FIXME: Add some complex types here
+        (Type("varchar"), [(["root"], Type("varchar"))],
+    ]
+)
+def test_trino_type_parser_expand_fields(type_, expected_fields):
+    """Test that expanding nested ROWs into multiple additional paths works"""
+    parser = TrinoTypeParser()
+    actual = parser.expand_fields(["root"], type_)
+
+    assert actual == expected

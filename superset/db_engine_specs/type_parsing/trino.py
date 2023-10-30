@@ -145,3 +145,33 @@ class TrinoTypeParser(TypeParser):  # pylint: disable=too-few-public-methods
             return self._parse_map(typedef)
 
         return Type(typedef.lower())
+
+    def expand_fields(self, path: list[str], type_: Type) -> list[(list[str], Type)]:
+        """
+        Expand the given type out to one or more columns by descending into ROWS and
+        expanding out their paths recursively.
+
+        Paths are a list of elements in the dotted path representing the nested field.
+        We initially expect a single-element path in representing the field name for
+        the initial field we're expanding, and we'll build the key as we descend
+        recursively.
+
+        i.e. The path foo.bar.baz is represented as ["foo", "bar", "baz"] and will be
+        expanded out to include fields at all levels of nested ROWs.
+
+        We can only navigate named fields in ROWs in this way, so we can't expand out
+        MAP or ARRAY types, nor fields in ROWs which have no name. We won't be able to
+        expand ROWs which are nested underneath any of those types, either.
+        """
+        fields = [([field_name], type_)]
+
+        if not isinstance(type_, Row):
+            return fields
+
+        for inner_field, inner_type in parsed_type.children:
+            if not inner_field:
+                continue
+
+            fields.extend(self.expand_fields(path + [inner_field], inner_type))
+
+        return fields
