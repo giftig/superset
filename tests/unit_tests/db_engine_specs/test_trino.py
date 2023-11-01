@@ -418,12 +418,9 @@ def test_execute_with_cursor_in_parallel(mocker: MockerFixture):
     )
 
 
-@patch("superset.db_engine_specs.trino.is_feature_enabled")
-def test_get_columns(feature_mock: Mock, mocker: MockerFixture):
-    """Test that ROW columns are not expanded without TRINO_EXPAND_ROWS"""
+def test_get_columns(mocker: MockerFixture):
+    """Test that ROW columns are not expanded without expand_rows"""
     from superset.db_engine_specs.trino import TrinoEngineSpec
-
-    feature_mock.return_value = False
 
     field1_type = datatype.parse_sqltype("row(a varchar, b date)")
     field2_type = datatype.parse_sqltype("row(r1 row(a varchar, b varchar))")
@@ -450,16 +447,12 @@ def test_get_columns(feature_mock: Mock, mocker: MockerFixture):
         ),
     ]
 
-    feature_mock.assert_called_once_with("TRINO_EXPAND_ROWS")
     _assert_columns_equal(actual, expected)
 
 
-@patch("superset.db_engine_specs.trino.is_feature_enabled")
-def test_get_columns_expand_rows(feature_mock: Mock, mocker: MockerFixture):
-    """Test that ROW columns are correctly expanded with TRINO_EXPAND_ROWS"""
+def test_get_columns_expand_rows(mocker: MockerFixture):
+    """Test that ROW columns are correctly expanded with expand_rows"""
     from superset.db_engine_specs.trino import TrinoEngineSpec
-
-    feature_mock.return_value = True
 
     field1_type = datatype.parse_sqltype("row(a varchar, b date)")
     field2_type = datatype.parse_sqltype("row(r1 row(a varchar, b varchar))")
@@ -473,7 +466,9 @@ def test_get_columns_expand_rows(feature_mock: Mock, mocker: MockerFixture):
     mock_inspector = mocker.MagicMock()
     mock_inspector.get_columns.return_value = sqla_columns
 
-    actual = TrinoEngineSpec.get_columns(mock_inspector, "table", "schema")
+    actual = TrinoEngineSpec.get_columns(
+        mock_inspector, "table", "schema", {"expand_rows": True}
+    )
     expected = [
         ResultSetColumnType(
             name="field1", column_name="field1", type=field1_type, is_dttm=False
@@ -521,5 +516,4 @@ def test_get_columns_expand_rows(feature_mock: Mock, mocker: MockerFixture):
         ),
     ]
 
-    feature_mock.assert_called_once_with("TRINO_EXPAND_ROWS")
     _assert_columns_equal(actual, expected)

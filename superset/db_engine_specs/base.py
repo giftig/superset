@@ -1310,7 +1310,11 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
 
     @classmethod
     def get_columns(
-        cls, inspector: Inspector, table_name: str, schema: str | None
+        cls,
+        inspector: Inspector,
+        table_name: str,
+        schema: str | None,
+        options: dict[str, Any] | None = None,
     ) -> list[ResultSetColumnType]:
         """
         Get all columns from a given schema and table
@@ -1318,6 +1322,8 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         :param inspector: SqlAlchemy Inspector instance
         :param table_name: Table name
         :param schema: Schema name. If omitted, uses default schema for database
+        :param options: Extra options to customise the display of columns in
+                        some databases
         :return: All columns in table
         """
         return convert_inspector_columns(

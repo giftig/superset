@@ -55,7 +55,6 @@ These features are **finished** but currently being tested. They are usable, but
 - PLAYWRIGHT_REPORTS_AND_THUMBNAILS
 - RLS_IN_SQLLAB
 - SSH_TUNNELING [(docs)](https://superset.apache.org/docs/installation/setup-ssh-tunneling)
-- TRINO_EXPAND_ROWS
 - USE_ANALAGOUS_COLORS
 
 ## Stable

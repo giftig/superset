@@ -372,10 +372,19 @@ class TrinoEngineSpec(PrestoBaseEngineSpec):
 
     @classmethod
     def get_columns(
-        cls, inspector: Inspector, table_name: str, schema: str | None
+        cls,
+        inspector: Inspector,
+        table_name: str,
+        schema: str | None,
+        options: dict[str, Any] | None = None,
     ) -> list[ResultSetColumnType]:
-        base_cols = super().get_columns(inspector, table_name, schema)
-        if not is_feature_enabled("TRINO_EXPAND_ROWS"):
+        """
+        If the "expand_rows" feature is enabled on the database via
+        "schema_options", expand the schema definition out to show all
+        subfields of nested ROWs as their appropriate dotted paths.
+        """
+        base_cols = super().get_columns(inspector, table_name, schema, options)
+        if not (options or {}).get("expand_rows"):
             return base_cols
 
         return [col for base_col in base_cols for col in cls._expand_columns(base_col)]

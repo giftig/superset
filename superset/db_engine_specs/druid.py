@@ -131,15 +131,6 @@ class DruidEngineSpec(BaseEngineSpec):
         return "MILLIS_TO_TIMESTAMP({col})"
 
     @classmethod
-    def get_columns(
-        cls, inspector: Inspector, table_name: str, schema: str | None
-    ) -> list[ResultSetColumnType]:
-        """
-        Update the Druid type map.
-        """
-        return super().get_columns(inspector, table_name, schema)
-
-    @classmethod
     def get_dbapi_exception_mapping(cls) -> dict[type[Exception], type[Exception]]:
         # pylint: disable=import-outside-toplevel
         from requests import exceptions as requests_exceptions

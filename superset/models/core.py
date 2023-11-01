@@ -773,6 +773,11 @@ class Database(
         url = make_url_safe(self.sqlalchemy_uri_decrypted)
         return self.get_db_engine_spec(url)
 
+    @property
+    def metadata_params(self) -> MetaData:
+        extra = self.get_extra()
+        return MetaData(**extra.get("metadata_params", {}))
+
     @classmethod
     @lru_cache(maxsize=LRU_CACHE_MAX_SIZE)
     def get_db_engine_spec(
@@ -816,12 +821,10 @@ class Database(
         self.db_engine_spec.update_params_from_encrypted_extra(self, params)
 
     def get_table(self, table_name: str, schema: str | None = None) -> Table:
-        extra = self.get_extra()
-        meta = MetaData(**extra.get("metadata_params", {}))
         with self.get_sqla_engine_with_context() as engine:
             return Table(
                 table_name,
-                meta,
+                self.metadata_params,
                 schema=schema or None,
                 autoload=True,
                 autoload_with=engine,
@@ -836,8 +839,12 @@ class Database(
     def get_columns(
         self, table_name: str, schema: str | None = None
     ) -> list[ResultSetColumnType]:
+        options = self.metadata_params.get("schema_options")
+
         with self.get_inspector_with_context() as inspector:
-            return self.db_engine_spec.get_columns(inspector, table_name, schema)
+            return self.db_engine_spec.get_columns(
+                inspector, table_name, schema, options
+            )
 
     def get_metrics(
         self,
