@@ -30,6 +30,10 @@ x-superset-volumes:
   - ./docker:/app/docker
   - superset_home:/app/superset_home
 
+x-superset-networks: &superset-networks
+  - default
+  - rusteam-public
+
 version: "3.7"
 services:
   redis:
@@ -67,6 +71,7 @@ services:
       - 8088:8088
     depends_on: *superset-depends-on
     volumes: *superset-volumes
+    networks: *superset-networks
 
   superset-init:
     image: *superset-image
@@ -102,6 +107,7 @@ services:
           "CMD-SHELL",
           "celery -A superset.tasks.celery_app:app inspect ping -d celery@$$HOSTNAME",
         ]
+    networks: *superset-networks
 
   superset-worker-beat:
     image: *superset-image
@@ -126,3 +132,10 @@ volumes:
     external: false
   redis:
     external: false
+
+networks:
+  default:
+    name: superset
+  rusteam-public:
+    name: rusteam-public
+    external: true
