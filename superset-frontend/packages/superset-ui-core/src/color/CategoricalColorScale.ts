@@ -19,7 +19,7 @@
 
 import { scaleOrdinal, ScaleOrdinal } from 'd3-scale';
 import { ExtensibleFunction } from '../models';
-import { ColorsInitLookup, ColorsLookup } from './types';
+import { ColorsInitLookup, ColorsLookup, ChartColorsLookup } from './types';
 import stringifyAndTrim from './stringifyAndTrim';
 import getLabelsColorMap from './LabelsColorMapSingleton';
 import { getAnalogousColors } from './utils';
@@ -39,6 +39,7 @@ class CategoricalColorScale extends ExtensibleFunction {
   scale: ScaleOrdinal<{ toString(): string }, string>;
 
   forcedColors: ColorsLookup;
+  perChartForcedColors: ChartColorsLookup;
 
   labelsColorMapInstance: ReturnType<typeof getLabelsColorMap>;
 
@@ -52,7 +53,11 @@ class CategoricalColorScale extends ExtensibleFunction {
    * @param {*} forcedColors optional parameter that comes from parent
    * (usually CategoricalColorNamespace)
    */
-  constructor(colors: string[], forcedColors: ColorsInitLookup = {}) {
+  constructor(
+    colors: string[],
+    forcedColors: ColorsInitLookup = {},
+    perChartForcedColors: ChartColorsLookup = {}
+  ) {
     super((value: string, sliceId?: number, colorScheme?: string) =>
       this.getColor(value, sliceId, colorScheme),
     );
@@ -81,6 +86,7 @@ class CategoricalColorScale extends ExtensibleFunction {
     // forced colors from parent (usually CategoricalColorNamespace)
     // currently used in dashboards to set custom label colors
     this.forcedColors = forcedColors as ColorsLookup;
+    this.perChartForcedColors = perChartForcedColors;
   }
 
   /**
@@ -112,8 +118,16 @@ class CategoricalColorScale extends ExtensibleFunction {
    */
   getColor(value?: string, sliceId?: number, colorScheme?: string): string {
     const cleanedValue = stringifyAndTrim(value);
-    // priority: forced color (i.e. custom label colors) > shared color > scale color
-    const forcedColor = this.forcedColors?.[cleanedValue];
+
+    // priority: forced color (i.e. custom label colors) per chart > forced color per dashboard >
+    // shared color > scale color
+    let chartForcedColor = null;
+    if (sliceId != null) {
+      chartForcedColor = this.perChartForcedColors?.[stringifyAndTrim(sliceId)]?.[cleanedValue];
+    }
+    console.log(`HODOR HODOR HODOR: ${chartForcedColor}`);
+    const forcedColor = chartForcedColor ?? this.forcedColors?.[cleanedValue];
+
     const isExistingLabel = this.chartLabelsColorMap.has(cleanedValue);
     let color = forcedColor || this.scale(cleanedValue);
 

@@ -25,6 +25,10 @@ export interface ColorsLookup {
   [key: string]: string;
 }
 
+export interface ChartColorsLookup {
+  [key: string]: ColorsLookup;
+}
+
 export interface RgbaColor {
   r: number;
   g: number;

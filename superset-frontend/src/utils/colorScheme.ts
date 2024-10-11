@@ -124,6 +124,15 @@ export const applyColors = (metadata: Record<string, any>, fresh = false) => {
     categoricalNamespace.setColor(label, customLabelColors[label]);
   });
 
+  // per-chart custom label colors
+  Object.keys(metadata?.chart_configuration).forEach(chartId => {
+    const perChartCustomLabelColors = metadata?.chart_configuration?.[chartId]?.label_colors || {};
+
+    Object.keys(perChartCustomLabelColors).forEach(label => {
+      categoricalNamespace.setColor(label, perChartCustomLabelColors[label], chartId);
+    });
+  });
+
   // re-instantiate a fresh labels color map based on current scheme
   // will consider also just applied custom label colors
   refreshLabelsColorMap(metadata?.color_namespace, colorScheme);

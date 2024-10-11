@@ -18,7 +18,7 @@
  */
 
 import CategoricalColorScale from './CategoricalColorScale';
-import { ColorsLookup } from './types';
+import { ColorsLookup, ChartColorsLookup } from './types';
 import getCategoricalSchemeRegistry from './CategoricalSchemeRegistrySingleton';
 import stringifyAndTrim from './stringifyAndTrim';
 
@@ -26,6 +26,7 @@ export default class CategoricalColorNamespace {
   name: string;
 
   forcedItems: ColorsLookup;
+  perChartForcedItems: ChartColorsLookup;
 
   scales: {
     [key: string]: CategoricalColorScale;
@@ -35,12 +36,15 @@ export default class CategoricalColorNamespace {
     this.name = name;
     this.scales = {};
     this.forcedItems = {};
+    this.perChartForcedItems = {};
   }
 
   getScale(schemeId?: string) {
     const id = schemeId ?? getCategoricalSchemeRegistry().getDefaultKey() ?? '';
     const scheme = getCategoricalSchemeRegistry().get(id);
-    return new CategoricalColorScale(scheme?.colors ?? [], this.forcedItems);
+    return new CategoricalColorScale(
+      scheme?.colors ?? [], this.forcedItems, this.perChartForcedItems
+    );
   }
 
   /**
@@ -50,14 +54,22 @@ export default class CategoricalColorNamespace {
    * @param {*} value value
    * @param {*} forcedColor color
    */
-  setColor(value: string, forcedColor: string) {
-    this.forcedItems[stringifyAndTrim(value)] = forcedColor;
+  setColor(value: string, forcedColor: string, chartId?: string) {
+    if (chartId != null) {
+      let cleanChartId = stringifyAndTrim(chartId);
+      let perChart = this.perChartForcedItems[cleanChartId] || {};
+      perChart[stringifyAndTrim(value)] = forcedColor;
+      this.perChartForcedItems[cleanChartId] = perChart;
+    } else {
+      this.forcedItems[stringifyAndTrim(value)] = forcedColor;
+    }
 
     return this;
   }
 
   resetColors() {
     this.forcedItems = {};
+    this.perChartForcedItems = {};
   }
 }
 
